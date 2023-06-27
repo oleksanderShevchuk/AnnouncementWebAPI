@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AnnouncementWebAPI.Controllers
 {
-    [Controller]
+    [Route("api/[controller]")]
+    [ApiController]
     public class AnnouncementController : Controller
     {
         private readonly ApplicationDbContext dbContext;
@@ -30,28 +31,28 @@ namespace AnnouncementWebAPI.Controllers
             await dbContext.SaveChangesAsync();
             return Ok();
         }
-        [HttpPut]
+        [HttpPut("{id}")]
         public async Task<IActionResult> EditAnnouncement(int id, Announcement announcement)
         {
-            if (id == announcement.Id && id > 0)
+            if (id != announcement.Id)
             {
-                dbContext.Announcements.Update(announcement);
-                await dbContext.SaveChangesAsync();
+                return BadRequest();
             }
+            dbContext.Announcements.Update(announcement);
+            await dbContext.SaveChangesAsync();
             return Ok();
         }
-        [HttpDelete]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAnnouncement(int id)
         {
-            if (id > 0)
+            var announcement = await dbContext.Announcements.FindAsync(id);
+            if (announcement == null)
             {
-                var announcement = await dbContext.Announcements.FirstOrDefaultAsync(item => item.Id == id);
-                if (announcement != null)
-                {
-                    dbContext.Announcements.Remove(announcement);
-                    await dbContext.SaveChangesAsync();
-                }
+                return NotFound();
+
             }
+            dbContext.Announcements.Remove(announcement);
+            await dbContext.SaveChangesAsync();
             return Ok();
         }
         /// <summary>
@@ -59,7 +60,7 @@ namespace AnnouncementWebAPI.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetDetailsAnnouncement(int? id)
         {
             var announcement = await dbContext.Announcements.FindAsync(id);
@@ -70,6 +71,7 @@ namespace AnnouncementWebAPI.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Route("GetTop3Similar")]
         public async Task<IActionResult> GetTop3SimilarAnnouncements()
         {
             var charsForSplit = new char[] { ' ', ',', '.', ':', '-', '\t' };
